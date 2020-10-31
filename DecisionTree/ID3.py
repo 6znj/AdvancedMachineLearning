@@ -118,4 +118,80 @@ class DecisionTree:
         uniqueVals = set(featValues)
         for value in uniqueVals:
             # 对每个value递归建树
-            sub_X, sub_
+            sub_X, sub_y = self._splitDataset(X, y, bestFeatureIndex, value)
+            myTree[bestFeatStr][value] = self._createTree(sub_X, sub_y, featureIndex)
+        return myTree
+
+    def fit(self, X, y):
+        # 类型检查
+        if isinstance(X, np.ndarray) and isinstance(y, np.ndarray):
+            pass
+        else:
+            try:
+                X = np.array(X)
+                y = np.array(y)
+            except:
+                raise TypeError("numpy.ndarray requied for X, y")
+
+        featureIndex = tuple(['x' + str(i) for i in range(X.shape[1])])
+        self._tree = self._createTree(X, y, featureIndex)
+
+    def predict(self, X):
+        if self._tree == 'None':
+            raise NotImplementedError("Estimator not fitted, call 'fit' first")
+
+        # 类型检查
+        if isinstance(X, np.ndarray):
+            pass
+        else:
+            try:
+                X = np.array(X)
+            except:
+                raise TypeError("numpy.ndarray requied for X")
+
+        def _classify(tree, sample):
+            """
+            用训练好的决策树对输入数据分类
+            :param tree:
+            :param sample:
+            :return:
+            """
+            featureIndex = list(tree.keys())[0]
+            secondDict = tree[featureIndex]
+            key = sample[int(featureIndex[1:])]
+            valueOfKey = secondDict[key]
+            if isinstance(valueOfKey, dict):
+                label = _classify(valueOfKey, sample)
+            else:
+                label = valueOfKey
+            return label
+
+        if X.shape[0] == 1:
+            return _classify(self._tree, X)
+        else:
+            result = []
+            for i in range(X.shape[0]):
+                result.append(_classify(self._tree, X[i]))
+            return np.array(result)
+
+    def show(self):
+        if self._tree == None:
+            raise NotImplementedError("Estimator not fitted, call 'fit' first")
+
+        # plot the tree using matplotlib
+        import treePlotter
+        print(self._tree)
+        treePlotter.createPlot(self._tree)
+
+
+if __name__ == '__main__':
+    clf = DecisionTree()
+    X = [[1, 2, 0, 1, 0],
+         [0, 1, 1, 0, 1],
+         [1, 0, 0, 0, 1],
+         [2, 1, 1, 0, 1],
+         [1, 1, 0, 1, 1]]
+    y = ['yes', 'yes', 'no', 'no', 'no']
+    clf.fit(X, y)
+    clf.predict(X)
+    clf.show()
